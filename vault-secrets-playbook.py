@@ -1,19 +1,28 @@
-import hvac
+import requests
 
-# Connect to Vault
-client = hvac.Client(url='http://vault.default.svc.cluster.local:820')  # Update URL to match your Vault instance
+# Vault URL and token
+vault_url = 'http://vault.default.svc.cluster.local:8200'  # Replace with your Vault URL
+vault_token = 'your-vault-token'  # Replace with your Vault token
 
-# Authenticate (you can authenticate via token, AppRole, etc.)
-client.token = 'your-vault-token'  # Use your Vault token here
+# Vault API endpoint for reading a secret
+secret_path = 'secret/myapp/config'  # Replace with your secret path
 
-# Check if the client is authenticated
-if client.is_authenticated():
-    print("Successfully authenticated to Vault")
+# Headers for Vault token authentication
+headers = {
+    'X-Vault-Token': vault_token
+}
+
+# URL to get the secret from the KV v2 engine
+url = f'{vault_url}/v1/{secret_path}'
+
+# Make a GET request to the Vault API
+response = requests.get(url, headers=headers)
+
+# Check if the response was successful
+if response.status_code == 200:
+    secret = response.json()
+    print("Successfully retrieved the secret:")
+    print(f"Secret: {secret['data']['data']}")  # Access the data inside the secret
 else:
-    print("Authentication failed")
-
-# Retrieve a secret from Vault (replace with your secret path)
-secret = client.secrets.kv.v2.read_secret_version(path='secret/myapp/config')
-
-# Print the secret
-print(f"Secret: {secret['data']['data']}")
+    print(f"Failed to retrieve secret: {response.status_code}")
+    print(response.text)
